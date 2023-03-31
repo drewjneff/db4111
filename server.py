@@ -39,8 +39,8 @@ with engine.connect() as conn:
 	)
 	"""
 	res = conn.execute(text(create_table_command))
-	insert_table_command = """INSERT INTO test(name) VALUES ('he\'s so cool'), ('leader af'), ('hottie with a body')"""
-	res = conn.execute(text(insert_table_command))
+	#insert_table_command = """INSERT INTO test(name) VALUES ('he so cool'), ('leader af'), ('hottie with a body')"""
+	#res = conn.execute(text(insert_table_command))
 	# you need to commit for create, insert, update queries to reflect
 	conn.commit()
 
