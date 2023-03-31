@@ -1,4 +1,3 @@
-
 """
 Columbia's COMS W4111.001 Introduction to Databases
 Example Webserver
@@ -18,33 +17,20 @@ tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
 
 
-#
-# The following is a dummy URI that does not connect to a valid database. You will need to modify it to connect to your Part 2 database in order to use the data.
-#
-# XXX: The URI should be in the format of: 
-#
+# XXX: The URI should be in the format of:
 #     postgresql://USER:PASSWORD@34.73.36.248/project1
-#
-# For example, if you had username zy2431 and password 123123, then the following line would be:
-#
-#     DATABASEURI = "postgresql://zy2431:123123@34.73.36.248/project1"
-#
-# Modify these with your own credentials you received from TA!
 DATABASE_USERNAME = "djn2119"
 DATABASE_PASSWRD = "8055"
 DATABASE_HOST = "34.148.107.47" # change to 34.28.53.86 if you used database 2 for part 2
 DATABASEURI = f"postgresql://djn2119:8055@34.148.107.47/project1"
 
-#
-#
+
 # This line creates a database engine that knows how to connect to the URI above.
-#
 engine = create_engine(DATABASEURI)
 
-#
 # Example of running queries in your database
-# Note that this will probably not work if you already have a table named 'test' in your database, containing meaningful data. This is only an example showing you how to run queries in your database using SQLAlchemy.
-#
+# Note that this will probably not work if you already have a table named 'test' in your database, containing meaningful data.
+# This is only an example showing you how to run queries in your database using SQLAlchemy.
 with engine.connect() as conn:
 	create_table_command = """
 	CREATE TABLE IF NOT EXISTS test (
@@ -53,7 +39,7 @@ with engine.connect() as conn:
 	)
 	"""
 	res = conn.execute(text(create_table_command))
-	insert_table_command = """INSERT INTO test(name) VALUES ('grace hopper'), ('alan turing'), ('ada lovelace')"""
+	insert_table_command = """INSERT INTO test(name) VALUES ('he\'s so cool'), ('leader af'), ('hottie with a body')"""
 	res = conn.execute(text(insert_table_command))
 	# you need to commit for create, insert, update queries to reflect
 	conn.commit()
