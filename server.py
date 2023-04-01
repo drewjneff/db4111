@@ -31,6 +31,7 @@ DATABASEURI = f"postgresql://djn2119:8055@34.148.107.47/project1"
 # This line creates a database engine that knows how to connect to the URI above.
 engine = create_engine(DATABASEURI)
 
+
 @app.before_request
 def before_request():
 	"""
@@ -72,7 +73,18 @@ def teardown_request(exception):
 # see for routing: https://flask.palletsprojects.com/en/1.1.x/quickstart/#routing
 # see for decorators: http://simeonfranklin.com/blog/2012/jul/1/python-decorators-in-12-steps/
 
+@app.route('/login', methods=['POST'])
+def login():
+    # Authenticate the user and get the user object
+    user = authenticate(request.form['username'], request.form['password'])
+    if user is None:
+        return 'Invalid credentials'
 
+    # Store the last login time in the session
+    session['last_login_time'] = datetime.datetime.now()
+
+    # Return the home page
+    return render_template('home.html')
 
 #Index page 
 @app.route('/')
@@ -130,6 +142,39 @@ def random():
 	return render_template("random.html",**context)
 
 
+# Register page 
+@app.route('/register')
+def register():
+	return render_template('register.html')
+
+
+# Register Submission
+@app.route('/register_user', methods=['POST'])
+def register_user():
+    data = []
+    data.append(request.form['uname'])
+    data.append(request.form['password'])
+    data.append(request.form['gender'])
+    data.append(request.form['class_year'])
+    data.append(request.form['favorite_br'])
+    data.append(request.form['home_br'])
+
+    for i in range(len(data)):
+        if data[i] == '':
+            data[i] = None
+
+    try:
+        g.conn.execute(text('INSERT INTO users(uname, password, gender, class_year, favorite_br, home_br) VALUES (:uname, :password, :gender, :class_year, :favorite_br, :home_br)'), {'uname': data[0], 'password': data[1], 'gender': data[2], 'class_year': data[3], 'favorite_br': data[4], 'home_br': data[5]})
+        g.conn.commit()
+        success_message = "Success! Welcome "+data[0]+"!"
+        return render_template("register.html",success_message=success_message)
+    except Exception as e:
+        register_error_message = f"Error executing query: {str(e)}"
+        print(register_error_message)
+        return render_template('register.html', register_error_message=register_error_message)
+
+
+	
 
 
 """
@@ -165,7 +210,8 @@ def query():
         query_error_message = f"Error executing query: {str(e)}"
         print(query_error_message)
         return render_template('index.html', query_error_message=query_error_message)
-        cursor.close()
+    finally:
+	    cursor.close()
 
 
 
