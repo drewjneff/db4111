@@ -24,6 +24,35 @@
     margin-left: 25px;
   }
 {% endif %}
+
+#display_query {
+    display:none;
+    text-align:center;
+  }
+  
+  {% if query_display_text %}
+  #display_query{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    background-color: #c6dcff;
+    padding: 20px;
+    border-radius: 5px;
+    border: 1px solid #c6dcff;
+    max-width: 85%; 
+    margin-left: 25px;
+  }
+
+  #query_display_text {
+    font-weight: bold;
+    margin-right: 10px;
+  }
+
+  #query_display_data {
+    display: inline-block;
+  }
+{% endif %}
+
   </style>
 </style>
 <body>
@@ -38,6 +67,7 @@
     <input type="submit" value="Execute">
   </form>
   <div id="query_error">{{query_error_message}}</div>
+  <div id="display_query"><div id="query_display_text">{{query_display_text}}</div><div id="query_display_data">{{query_display_data}}</div></div>
   <table>
     {% if column_names %}
       <tr>

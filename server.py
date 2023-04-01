@@ -187,6 +187,8 @@ def query():
         results = cursor.fetchall()
         context["results"] = results
         context["column_names"]=cursor.keys()
+        context["query_display_text"]="Your Query: "
+        context["query_display_data"]=sql_query
         #context["column_names"] = [desc[0] for desc in cursor.description]
         return render_template('index.html', **context)
     except Exception as e:
