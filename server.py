@@ -15,6 +15,9 @@ from flask import Flask, request, render_template, g, redirect, Response
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
+app = Flask(__name__, static_folder='static')
+
+context = dict()
 
 
 # XXX: The URI should be in the format of:
@@ -105,13 +108,14 @@ def index():
 	#
 	# example of a database query
 	#
+	'''
 	select_query = "SELECT name from test"
 	cursor = g.conn.execute(text(select_query))
 	names = []
 	for result in cursor:
 		names.append(result[0])
 	cursor.close()
-
+'''
 	#
 	# Flask uses Jinja templates, which is an extension to HTML where you can
 	# pass data to a template and dynamically generate HTML based on the data
@@ -138,14 +142,15 @@ def index():
 	#     <div>{{n}}</div>
 	#     {% endfor %}
 	#
-	context = dict(data = names)
+
+	#context = dict(data = names)
 
 
 	#
 	# render_template looks in the templates/ folder for files.
 	# for example, the below file reads template/index.html
 	#
-	return render_template("index.html", **context)
+	return render_template("index.html")
 
 #
 # This is an example of a different path.  You can see it at:
@@ -159,7 +164,7 @@ def index():
 def another():
 	return render_template("another.html")
 
-
+"""
 # Example of adding new data to the database
 @app.route('/add', methods=['POST'])
 def add():
@@ -172,12 +177,24 @@ def add():
 	g.conn.execute(text('INSERT INTO test(name) VALUES (:new_name)'), params)
 	g.conn.commit()
 	return redirect('/')
+"""
+
+@app.route('/query', methods=['GET'])
+def query():
+    sql_query = request.args.get('query')
+    try:
+        cursor = g.conn.execute(text(sql_query))
+        results = cursor.fetchall()
+        context["results"] = results
+        context["column_names"]=cursor.keys()
+        #context["column_names"] = [desc[0] for desc in cursor.description]
+        return render_template('index.html', **context)
+    except Exception as e:
+        query_error_message = f"Error executing query: {str(e)}"
+        print(query_error_message)
+        return render_template('index.html', query_error_message=query_error_message)
 
 
-@app.route('/login')
-def login():
-	abort(401)
-	this_is_never_executed()
 
 
 if __name__ == "__main__":
