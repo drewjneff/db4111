@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='index.css') }}">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='leaderboard.css') }}">
   <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
   <title>CUBR</title>
 
@@ -81,23 +81,11 @@
   <p><a href="another">Go to the other page</a></p> 
   -->
 
-  <form method="GET" action="/query">
-    <label for="query">Enter Query:</label>
-    <textarea id="query" name="query" rows="6"></textarea>
-    <input type="submit" value="Execute">
-  </form>
-
-  <div id="query_error">{{query_error_message}}</div>
-  <div id="display_query"><div id="query_display_text">{{query_display_text}}</div><div id="query_display_data">{{query_display_data}}</div></div>
-
   <table>
-    {% if column_names %}
       <tr>
-      {% for column_name in column_names %}
-        <th>{{ column_name }}</th>
-      {% endfor %}
+        <th>Username</th>
+        <th># of Bathrooms Visited</th>
       </tr>
-    {% endif %}
     {% for result in results %}
       <tr>
       {% for column in result %}

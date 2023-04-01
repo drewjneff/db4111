@@ -31,23 +31,6 @@ DATABASEURI = f"postgresql://djn2119:8055@34.148.107.47/project1"
 # This line creates a database engine that knows how to connect to the URI above.
 engine = create_engine(DATABASEURI)
 
-# Example of running queries in your database
-# Note that this will probably not work if you already have a table named 'test' in your database, containing meaningful data.
-# This is only an example showing you how to run queries in your database using SQLAlchemy.
-with engine.connect() as conn:
-	create_table_command = """
-	CREATE TABLE IF NOT EXISTS test (
-		id serial,
-		name text
-	)
-	"""
-	res = conn.execute(text(create_table_command))
-	#insert_table_command = """INSERT INTO test(name) VALUES ('he so cool'), ('leader af'), ('hottie with a body')"""
-	#res = conn.execute(text(insert_table_command))
-	# you need to commit for create, insert, update queries to reflect
-	conn.commit()
-
-
 @app.before_request
 def before_request():
 	"""
@@ -88,26 +71,16 @@ def teardown_request(exception):
 # 
 # see for routing: https://flask.palletsprojects.com/en/1.1.x/quickstart/#routing
 # see for decorators: http://simeonfranklin.com/blog/2012/jul/1/python-decorators-in-12-steps/
-#
+
+
+
+#Index page 
 @app.route('/')
 def index():
-	"""
-	request is a special object that Flask provides to access web request information:
-
-	request.method:   "GET" or "POST"
-	request.form:     if the browser submitted a form, this contains the data in the form
-	request.args:     dictionary of URL arguments, e.g., {a:1, b:2} for http://localhost?a=1&b=2
-
-	See its API: https://flask.palletsprojects.com/en/1.1.x/api/#incoming-request-data
-	"""
-
-	# DEBUG: this is debugging code to see what request looks like
+	
 	print(request.args)
-
-
-	#
-	# example of a database query
-	#
+	return render_template("index.html")
+	
 	'''
 	select_query = "SELECT name from test"
 	cursor = g.conn.execute(text(select_query))
@@ -116,53 +89,48 @@ def index():
 		names.append(result[0])
 	cursor.close()
 '''
-	#
-	# Flask uses Jinja templates, which is an extension to HTML where you can
-	# pass data to a template and dynamically generate HTML based on the data
-	# (you can think of it as simple PHP)
-	# documentation: https://realpython.com/primer-on-jinja-templating/
-	#
-	# You can see an example template in templates/index.html
-	#
-	# context are the variables that are passed to the template.
-	# for example, "data" key in the context variable defined below will be 
-	# accessible as a variable in index.html:
-	#
-	#     # will print: [u'grace hopper', u'alan turing', u'ada lovelace']
-	#     <div>{{data}}</div>
-	#     
-	#     # creates a <div> tag for each element in data
-	#     # will print: 
-	#     #
-	#     #   <div>grace hopper</div>
-	#     #   <div>alan turing</div>
-	#     #   <div>ada lovelace</div>
-	#     #
-	#     {% for n in data %}
-	#     <div>{{n}}</div>
-	#     {% endfor %}
-	#
 
-	#context = dict(data = names)
-
-
-	#
-	# render_template looks in the templates/ folder for files.
-	# for example, the below file reads template/index.html
-	#
-	return render_template("index.html")
-
-#
-# This is an example of a different path.  You can see it at:
-# 
-#     localhost:8111/another
-#
-# Notice that the function name is another() rather than index()
-# The functions for each app.route need to have different names
-#
-@app.route('/another')
+#Leaderboard page 	
+@app.route('/leaderboard')
 def another():
-	return render_template("another.html")
+	leaderboard_query = "SELECT uname, num_br_visited FROM users WHERE num_br_visited >= 1 ORDER BY num_br_visited DESC LIMIT 10"
+	cursor = g.conn.execute(text(leaderboard_query))
+	results = cursor.fetchall()
+	context["results"] = results
+	cursor.close()
+	return render_template("leaderboard.html",**context)
+
+
+#Review page
+@app.route('/reviews')
+def review():
+	return render_template("reviews.html")
+
+
+#Random page
+@app.route('/random')
+def random():
+	rand_query = """ SELECT bname, floor, br_description, gender, 
+       					COALESCE(CAST(handicap AS VARCHAR), 'N/A'), 
+       					COALESCE(CAST(num_toilet AS VARCHAR),'N/A'),
+       					COALESCE(CAST(num_sink AS VARCHAR),'N/A'),
+       					COALESCE(CAST(num_urinal AS VARCHAR),'N/A'),
+       					CASE 
+							WHEN single_use = true THEN 'yes'
+         					WHEN single_use = false THEN 'no'
+         					ELSE 'N/A'
+       					END
+					 FROM bathroom NATURAL JOIN building 
+					 ORDER BY RANDOM() 
+					 LIMIT 1;"""
+	cursor = g.conn.execute(text(rand_query))
+	results = cursor.fetchall()
+	context["results"] = results
+	cursor.close()
+	return render_template("random.html",**context)
+
+
+
 
 """
 # Example of adding new data to the database
@@ -179,6 +147,7 @@ def add():
 	return redirect('/')
 """
 
+#QUERY ON index.html 
 @app.route('/query', methods=['GET'])
 def query():
     sql_query = request.args.get('query')
@@ -191,10 +160,12 @@ def query():
         context["query_display_data"]=sql_query
         #context["column_names"] = [desc[0] for desc in cursor.description]
         return render_template('index.html', **context)
+        cursor.close()  
     except Exception as e:
         query_error_message = f"Error executing query: {str(e)}"
         print(query_error_message)
         return render_template('index.html', query_error_message=query_error_message)
+        cursor.close()
 
 
 
