@@ -170,3 +170,30 @@ input:hover {
   margin: 0 auto;
   text-align: center;
 }
+
+#linkContainer {
+  display: flex;
+  justify-content: center;
+}
+
+#randLink {
+  align-items: center;
+  text-align: center;
+  background-color: #78b3e0;
+  padding: 10px 10px 10px 10px;
+  border-radius: 5px;
+  border: 1px solid #78b3e0;
+  color: white;
+  width: 150px; 
+  margin: 0 auto;
+  transition: background-color 0.25s ease;
+}
+
+#randLink a {
+  color: white;
+}
+
+#randLink:hover {
+  background-color: #91c1e5;
+  text-decoration: none;
+}
