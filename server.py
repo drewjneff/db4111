@@ -11,11 +11,12 @@ import os
   # accessible as a variable in index.html:
 from sqlalchemy import *
 from sqlalchemy.pool import NullPool
-from flask import Flask, request, render_template, g, redirect, Response
+from flask import Flask, request, render_template, g, session, url_for, redirect, Response
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
 app = Flask(__name__, static_folder='static')
+app.secret_key = 'your_secret_key_here'
 
 context = dict()
 
@@ -59,87 +60,115 @@ def teardown_request(exception):
 	except Exception as e:
 		pass
 
-
-#
-# @app.route is a decorator around index() that means:
-#   run index() whenever the user tries to access the "/" path using a GET request
-#
-# If you wanted the user to go to, for example, localhost:8111/foobar/ with POST or GET then you could use:
-#
-#       @app.route("/foobar/", methods=["POST", "GET"])
-#
-# PROTIP: (the trailing / in the path is important)
-# 
-# see for routing: https://flask.palletsprojects.com/en/1.1.x/quickstart/#routing
-# see for decorators: http://simeonfranklin.com/blog/2012/jul/1/python-decorators-in-12-steps/
-
-@app.route('/login', methods=['POST'])
+#Login page 
+@app.route('/login')
 def login():
-    # Authenticate the user and get the user object
-    user = authenticate(request.form['username'], request.form['password'])
-    if user is None:
-        return 'Invalid credentials'
+	return render_template('login.html')
 
-    # Store the last login time in the session
-    session['last_login_time'] = datetime.datetime.now()
 
-    # Return the home page
-    return render_template('home.html')
+# On login submission
+@app.route('/login_attempt', methods=['POST'])
+def login_attempt():
+    uname_form = request.form['login_uname']
+    uname = uname_form.upper() 
+    password = request.form['login_pw']
+    check_login_credentials = '''SELECT uname FROM USERS WHERE (UPPER(uname),password)=(:uname,:password)'''
+    cursor = g.conn.execute(text(check_login_credentials), {'uname': uname, 'password': password})
+    row = cursor.fetchone()
+    if row is None:
+        print("No match")
+        check_user_exists = '''SELECT uname FROM USERS WHERE UPPER(uname)=:uname'''
+        cursor = g.conn.execute(text(check_user_exists),{'uname':uname})
+        row = cursor.fetchone()
+        if row is None:
+            login_error_message = "Error: User Not Found"
+        else:
+            login_error_message = "Error: Invalid Password"
+        return render_template('login.html',login_error_message=login_error_message)
+    else:
+        print("Found matching row:", row)
+        session['username'] = uname_form 
+        context.clear()
+        context['success_message'] = "Welcome "+row[0]+"!"
+        context['logout_status'] = "Logout "+uname_form
+        return render_template('index.html',**context)
+
+
+@app.route('/logout')
+def logout():
+	session.pop('username', None)
+	return redirect(url_for('index'))
+
 
 #Index page 
 @app.route('/')
 def index():
+	username = session.get('username')
+	if username is None:
+		login_error_message = "Please Log In To Continue or"
+		return render_template("login.html",login_error_message=login_error_message)
+	else:
+		print("got here")
+		logout_status = "Logout "+username
+		return render_template("index.html",logout_status=logout_status)
 	
-	print(request.args)
-	return render_template("index.html")
-	
-	'''
-	select_query = "SELECT name from test"
-	cursor = g.conn.execute(text(select_query))
-	names = []
-	for result in cursor:
-		names.append(result[0])
-	cursor.close()
-'''
 
 #Leaderboard page 	
 @app.route('/leaderboard')
 def another():
-	leaderboard_query = "SELECT uname, num_br_visited FROM users WHERE num_br_visited >= 1 ORDER BY num_br_visited DESC LIMIT 10"
-	cursor = g.conn.execute(text(leaderboard_query))
-	results = cursor.fetchall()
-	context["results"] = results
-	cursor.close()
-	return render_template("leaderboard.html",**context)
+	username = session.get('username')
+	if username is None:
+		login_error_message = "Please Log In To Continue or"
+		return render_template("login.html",login_error_message=login_error_message)
+	else:
+		leaderboard_query = "SELECT uname, num_br_visited FROM users WHERE num_br_visited >= 1 ORDER BY num_br_visited DESC LIMIT 10"
+		cursor = g.conn.execute(text(leaderboard_query))
+		results = cursor.fetchall()
+		context["results"] = results
+		context["logout_status"] = "Logout "+username
+		cursor.close()
+		return render_template("leaderboard.html",**context)
 
 
 #Review page
 @app.route('/reviews')
 def review():
-	return render_template("reviews.html")
+	username = session.get('username')
+	if username is None:
+		login_error_message = "Please Log In To Continue or"
+		return render_template("login.html",login_error_message=login_error_message)
+	else:
+		context["logout_status"] = "Logout "+username
+		return render_template("reviews.html",**context)
 
 
 #Random page
 @app.route('/random')
 def random():
-	rand_query = """ SELECT bname, floor, br_description, gender, 
-       					COALESCE(CAST(handicap AS VARCHAR), 'N/A'), 
-       					COALESCE(CAST(num_toilet AS VARCHAR),'N/A'),
-       					COALESCE(CAST(num_sink AS VARCHAR),'N/A'),
-       					COALESCE(CAST(num_urinal AS VARCHAR),'N/A'),
-       					CASE 
-							WHEN single_use = true THEN 'yes'
+	username = session.get('username')
+	if username is None:
+		login_error_message = "Please Log In To Continue or"
+		return render_template("login.html",login_error_message=login_error_message)
+	else:
+		rand_query = """ SELECT bname, floor, br_description, gender, 
+       					 COALESCE(CAST(handicap AS VARCHAR), 'N/A'), 
+       					 COALESCE(CAST(num_toilet AS VARCHAR),'N/A'),
+       					 COALESCE(CAST(num_sink AS VARCHAR),'N/A'),
+       					 COALESCE(CAST(num_urinal AS VARCHAR),'N/A'),
+       					 CASE 
+						   	WHEN single_use = true THEN 'yes'
          					WHEN single_use = false THEN 'no'
          					ELSE 'N/A'
-       					END
-					 FROM bathroom NATURAL JOIN building 
-					 ORDER BY RANDOM() 
-					 LIMIT 1;"""
-	cursor = g.conn.execute(text(rand_query))
-	results = cursor.fetchall()
-	context["results"] = results
-	cursor.close()
-	return render_template("random.html",**context)
+       					 END
+					     FROM bathroom NATURAL JOIN building 
+					 	 ORDER BY RANDOM() 
+					 	 LIMIT 1;"""
+		cursor = g.conn.execute(text(rand_query))
+		results = cursor.fetchall()
+		context["results"] = results
+		context["logout_status"] = "Logout "+username
+		cursor.close()
+		return render_template("random.html",**context)
 
 
 # Register page 
@@ -166,31 +195,13 @@ def register_user():
     try:
         g.conn.execute(text('INSERT INTO users(uname, password, gender, class_year, favorite_br, home_br) VALUES (:uname, :password, :gender, :class_year, :favorite_br, :home_br)'), {'uname': data[0], 'password': data[1], 'gender': data[2], 'class_year': data[3], 'favorite_br': data[4], 'home_br': data[5]})
         g.conn.commit()
-        success_message = "Success! Welcome "+data[0]+"!"
-        return render_template("register.html",success_message=success_message)
+        success_message = "Account Created! Welcome "+data[0]+"! Please login to continue."
+        return render_template("login.html",success_message=success_message)
     except Exception as e:
         register_error_message = f"Error executing query: {str(e)}"
         print(register_error_message)
         return render_template('register.html', register_error_message=register_error_message)
 
-
-	
-
-
-"""
-# Example of adding new data to the database
-@app.route('/add', methods=['POST'])
-def add():
-	# accessing form inputs from user
-	name = request.form['name']
-	
-	# passing params in for each variable into query
-	params = {}
-	params["new_name"] = name
-	g.conn.execute(text('INSERT INTO test(name) VALUES (:new_name)'), params)
-	g.conn.commit()
-	return redirect('/')
-"""
 
 #QUERY ON index.html 
 @app.route('/query', methods=['GET'])
@@ -212,8 +223,6 @@ def query():
         return render_template('index.html', query_error_message=query_error_message)
     finally:
 	    cursor.close()
-
-
 
 
 if __name__ == "__main__":

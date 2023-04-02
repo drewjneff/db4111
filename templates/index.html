@@ -53,6 +53,36 @@
   }
 {% endif %}
 
+#success_message {
+    display:none;
+    text-align:center;
+  }
+  
+  {% if success_message %}
+  #success_message{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    background-color: #55e361;
+    padding: 20px;
+    border-radius: 5px;
+    border: 1px solid #55e361;
+    max-width: 85%; 
+    margin: 0 auto;
+  }
+{% endif %}
+
+#logout_status {
+    display: none;
+  }
+
+  {% if logout_status %}
+  #login-menu-item {
+    display:block;
+    float: right
+  }
+  {% endif %}
+
   </style>
 
 </head>
@@ -67,7 +97,7 @@
     <a href="#">Catalog</a>
     <a href="/random">I'm feeling lucky</a>
     </div>
-    <a href="#" id="login-menu-item">Login</a>
+    <a href="/logout" id="logout-menu-item"><div>{{logout_status}}</div></a>
   </nav>
 
   <div class="header">
@@ -89,6 +119,7 @@
 
   <div id="query_error">{{query_error_message}}</div>
   <div id="display_query"><div id="query_display_text">{{query_display_text}}</div><div id="query_display_data">{{query_display_data}}</div></div>
+  <div id="success_message">{{success_message}}</div>
 
   <table>
     {% if column_names %}

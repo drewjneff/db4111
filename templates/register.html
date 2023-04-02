@@ -60,7 +60,6 @@
     <a href="#">Catalog</a>
     <a href="/random">I'm feeling lucky</a>
     </div>
-    <a href="#" id="login-menu-item">Login</a>
   </nav>
 
   <div class="header">
@@ -104,23 +103,6 @@
 
   <div id="register_error">{{register_error_message}}</div>
   <div id="success_message">{{success_message}}</div>
-
-  <table>
-    {% if column_names %}
-      <tr>
-      {% for column_name in column_names %}
-        <th>{{ column_name }}</th>
-      {% endfor %}
-      </tr>
-    {% endif %}
-    {% for result in results %}
-      <tr>
-      {% for column in result %}
-        <td>{{ column }}</td>
-      {% endfor %}
-      </tr>
-    {% endfor %}
-  </table>
 
 </body>
 </html>

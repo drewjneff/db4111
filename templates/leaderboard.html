@@ -53,6 +53,17 @@
   }
 {% endif %}
 
+#logout_status {
+    display: none;
+  }
+
+  {% if logout_status %}
+  #login-menu-item {
+    display:block;
+    float: right
+  }
+  {% endif %}
+
   </style>
 
 </head>
@@ -67,7 +78,7 @@
     <a href="#">Catalog</a>
     <a href="/random">I'm feeling lucky</a>
     </div>
-    <a href="#" id="login-menu-item">Login</a>
+    <a href="/logout" id="logout-menu-item"><div>{{logout_status}}</div></a>
   </nav>
 
   <div class="header">

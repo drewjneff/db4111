@@ -2,18 +2,19 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='random.css') }}">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='login.css') }}">
   <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
   <title>CUBR</title>
 
   <style>
-  #query_error {
+
+  #login_error {
     display:none;
     text-align:center;
   }
   
-  {% if query_error_message %}
-  #query_error{
+  {% if login_error_message %}
+  #login_error{
     display:flex;
     justify-content: center;
     background-color: #ffcccc;
@@ -23,36 +24,28 @@
     max-width: 85%; 
     margin: 0 auto;
   }
-{% endif %}
+  {% endif %}
 
-#display_query {
+
+  #success_message {
     display:none;
     text-align:center;
   }
   
-  {% if query_display_text %}
-  #display_query{
+  {% if success_message %}
+  #success_message{
     display: flex;
     flex-direction: row;
     align-items: center;
-    background-color: #78b3e0;
+    background-color: #55e361;
     padding: 20px;
     border-radius: 5px;
-    border: 1px solid #78b3e0;
+    border: 1px solid #55e361;
     max-width: 85%; 
     margin: 0 auto;
   }
-
-  #query_display_text {
-    font-weight: bold;
-    margin-right: 10px;
-  }
-
-  #query_display_data {
-    display: inline-block;
-  }
 {% endif %}
-
+  
   </style>
 
 </head>
@@ -67,40 +60,32 @@
     <a href="#">Catalog</a>
     <a href="/random">I'm feeling lucky</a>
     </div>
-    <a href="/logout" id="logout-menu-item"><div>{{logout_status}}</div></a>
   </nav>
 
   <div class="header">
     <h1>CUBR</h1>
     <img src="{{ url_for('static', filename='cubrlogo.png') }}" alt="logo">
   </div>
+  
+  <form method="POST" action="/login_attempt">
+    <label for="login_uname">Username:</label>
+    <input  type="text" id="login_uname" name="login_uname" required><br>
+
+    <label for="login_pw">Password:</label>
+    <input type="password" id="login_pw" name="login_pw" required><br>
+
+    <input id="submit-button" type="submit" value="Login">
+
+  </form>
+
+  <div id="login_error">
+    {{login_error_message}}
+    <a id="register-link" href="/register"> Register Here</a>
+  </div>
+
+  <div id="success_message">{{success_message}}</div>
 
   
-  
-  <!---
-  <p><a href="another">Go to the other page</a></p> 
-  -->
-
-  <table>
-      <tr>
-        <th>Building</th>
-        <th>Floor</th>
-        <th>Description</th>
-        <th>Gender</th>
-        <th>Handicap Accessible</th>
-        <th># Toilet</th>
-        <th># Sink</th>
-        <th># Urinal</th>
-        <th>Single Use?</th>
-      </tr>
-    {% for result in results %}
-      <tr>
-      {% for column in result %}
-        <td>{{ column }}</td>
-      {% endfor %}
-      </tr>
-    {% endfor %}
-  </table>
 
 </body>
 </html>
