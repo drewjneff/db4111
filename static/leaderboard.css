@@ -130,3 +130,8 @@ nav a:hover {
 #login-menu-item {
   float: right
 }
+
+#top10 {
+  margin: 0 auto;
+  text-align: center;
+}

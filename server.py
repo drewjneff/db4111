@@ -11,7 +11,7 @@ import os
   # accessible as a variable in index.html:
 from sqlalchemy import *
 from sqlalchemy.pool import NullPool
-from flask import Flask, request, render_template, g, session, url_for, redirect, Response
+from flask import Flask, request, render_template, g, session, jsonify, url_for, redirect, Response
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
@@ -19,6 +19,7 @@ app = Flask(__name__, static_folder='static')
 app.secret_key = 'your_secret_key_here'
 
 context = dict()
+find_context = dict()
 
 
 # XXX: The URI should be in the format of:
@@ -99,18 +100,25 @@ def logout():
 	session.pop('username', None)
 	return redirect(url_for('index'))
 
+@app.route('/clear_add_error')
+def clear_add_error():
+     find_context.clear()
+     return redirect(url_for('add'))
+     
+
 
 #Index page 
 @app.route('/')
 def index():
-	username = session.get('username')
-	if username is None:
-		login_error_message = "Please Log In To Continue or"
-		return render_template("login.html",login_error_message=login_error_message)
-	else:
-		print("got here")
-		logout_status = "Logout "+username
-		return render_template("index.html",logout_status=logout_status)
+    username = session.get('username')
+    if username is None:
+        login_error_message = "Please Log In To Continue or"
+        return render_template("login.html",login_error_message=login_error_message)
+    else:
+        logout_status = "Logout "+username
+        find_context.clear()
+        return render_template("index.html",logout_status=logout_status)
+
 	
 
 #Leaderboard page 	
@@ -124,6 +132,7 @@ def another():
 		leaderboard_query = "SELECT uname, num_br_visited FROM users WHERE num_br_visited >= 1 ORDER BY num_br_visited DESC LIMIT 10"
 		cursor = g.conn.execute(text(leaderboard_query))
 		results = cursor.fetchall()
+		context.clear()
 		context["results"] = results
 		context["logout_status"] = "Logout "+username
 		cursor.close()
@@ -132,14 +141,169 @@ def another():
 
 #Review page
 @app.route('/reviews')
-def review():
+def reviews():
 	username = session.get('username')
 	if username is None:
 		login_error_message = "Please Log In To Continue or"
 		return render_template("login.html",login_error_message=login_error_message)
 	else:
+		context.clear()
 		context["logout_status"] = "Logout "+username
 		return render_template("reviews.html",**context)
+        
+@app.route('/add')
+def add():
+    username = session.get('username')
+    if username is None:
+        login_error_message = "Please Log In To Continue or"
+        return render_template("login.html", login_error_message=login_error_message)
+    else:
+        context.clear()
+        if "success_message" in find_context:
+            context["success_message"] = find_context["success_message"]
+        if "query_error_message" in find_context:
+            context["query_error_message"] = find_context["query_error_message"]
+        get_buildings_query = "SELECT building_id, bname FROM building ORDER BY bname"
+        cursor = g.conn.execute(text(get_buildings_query))
+        buildings = cursor.fetchall()
+        context["building_options"] = buildings
+        context["logout_status"] = "Logout " + username
+        cursor.close()
+        return render_template("add.html", **context)
+
+
+
+@app.route('/add_br', methods=['POST'])
+def add_br():
+    username = session.get('username')
+    if username is None:
+        login_error_message = "Please Log In To Continue or"
+        return render_template("login.html", login_error_message=login_error_message)
+    else:
+        data = []
+        fields = ['building', 'floor', 'gender', 'br_description', 'single_use', 'handicap', 'num_toilet', 'num_sink', 'num_urinal']
+        for field in fields:
+            value = request.form.get(field)
+            if value:
+                data.append(value)
+            else:
+                data.append(None)
+        try:
+            add_query_string = '''INSERT INTO bathroom(building_id, floor, gender, br_description,single_use,handicap,num_toilet,num_sink,num_urinal) 
+               					  VALUES (:building, :floor, :gender, :br_description, :single_use, :handicap, :num_toilet, :num_sink, :num_urinal)
+               				   '''
+            g.conn.execute(text(add_query_string), {'building': data[0], 'floor': data[1], 'gender': data[2], 'br_description': data[3], 'single_use': data[4], 'handicap': data[5], 'num_toilet': data[6],'num_sink':data[7],'num_urinal':data[8]})
+            g.conn.commit()
+            find_context["success_message"] = "Success! Bathroom Added."
+            return redirect(url_for('add'))
+        except Exception as e:
+            find_context["query_error_message"] = f"Error adding bathroom: {str(e)}"
+            return redirect(url_for('add'))
+            #return render_template('add.html', query_error_message=query_error_message)
+
+      
+
+
+@app.route('/find')
+def find():
+    username = session.get('username')
+    if username is None:
+        login_error_message = "Please Log In To Continue or"
+        return render_template("login.html", login_error_message=login_error_message)
+    else:
+        get_buildings_query = "SELECT building_id, bname FROM building ORDER BY bname"
+        context.clear()
+        if "results" in find_context:
+              context["results"] = find_context["results"]
+              context["link_message"] = find_context["link_message"]
+              context["query_message"] = find_context["query_message"]
+        cursor = g.conn.execute(text(get_buildings_query))
+        buildings = cursor.fetchall()
+        context["building_options"] = buildings
+        context["logout_status"] = "Logout " + username
+        cursor.close()
+        return render_template("find.html", **context)
+
+
+
+#Gets second dropdown option of floors depending on the building selected in the first option 
+@app.route('/get_second_dropdown/<building>')
+def get_second_dropdown(building):
+    get_floors_query = """SELECT floors FROM building WHERE building_id = :building"""
+    cursor = g.conn.execute(text(get_floors_query), {'building': building})
+    rows = cursor.fetchall()
+    if len(rows) == 0:
+        return jsonify([])
+    if rows[0][0] is None:
+        return jsonify([])
+    floors = [floor.strip() for floor in rows[0][0]]
+    return jsonify(floors)
+
+	
+@app.route('/find_query', methods=['POST'])
+def find_query():
+    username = session.get('username')
+    if username is None:
+        login_error_message = "Please Log In To Continue or"
+        return render_template("login.html", login_error_message=login_error_message)
+    else:
+        data = []
+        if request.form.get('building'):
+            data.append(request.form['building'])
+        else:
+            data.append(None)
+        if request.form.get('floor'):
+           data.append(request.form['floor'])
+        else:
+            data.append(None)
+        if request.form.get('gender'):
+            data.append(request.form['gender'])
+        else:
+            data.append(None)
+
+        for i in range(len(data)):
+            if data[i] == '':
+                data[i] = None
+        find_query_str = """
+        SELECT bname, floor, br_description, gender, 
+               COALESCE(CAST(handicap AS VARCHAR), 'N/A'), 
+               COALESCE(CAST(num_toilet AS VARCHAR), 'N/A'),
+               COALESCE(CAST(num_sink AS VARCHAR), 'N/A'),
+               COALESCE(CAST(num_urinal AS VARCHAR), 'N/A'),
+               CASE 
+                   WHEN single_use = true THEN 'yes'
+                   WHEN single_use = false THEN 'no'
+                   ELSE 'N/A'
+               END
+        FROM bathroom 
+        NATURAL JOIN building
+        WHERE building_id = :building 
+          AND (floor = COALESCE(:floor, floor)) 
+          AND (gender = COALESCE(:gender, gender))
+        ORDER BY bname, floor;
+        """
+        cursor = g.conn.execute(text(find_query_str), {'building': data[0], 'floor': data[1], 'gender': data[2]})
+        results = cursor.fetchall()
+        context.clear()
+        find_context["results"] = results
+        find_context["logout_status"] = "Logout " + username
+        get_bname_query = "SELECT bname FROM building WHERE building_id = :building"
+        cursor = g.conn.execute(text(get_bname_query), {'building': data[0]})
+        bname_result = cursor.fetchone()
+        bname = bname_result[0]
+        print(bname_result)
+        cursor.close()
+        find_context["link_message"] = "Add more."
+        if not results:
+              find_context["query_message"] = "No Bathrooms On Record For "+bname+". "
+              find_context["link_message"] = "Be the first to add."
+        elif len(results) == 1 :
+              find_context["query_message"] = "Displaying 1 Bathroom On Record From "+bname+". "
+        else:
+              find_context["query_message"] = "Displaying "+str(len(results))+" Bathrooms On Record From "+bname+". "
+        return redirect(url_for('find'))
+
+
 
 
 #Random page
@@ -165,6 +329,7 @@ def random():
 					 	 LIMIT 1;"""
 		cursor = g.conn.execute(text(rand_query))
 		results = cursor.fetchall()
+		context.clear()
 		context["results"] = results
 		context["logout_status"] = "Logout "+username
 		cursor.close()
@@ -206,13 +371,16 @@ def register_user():
 #QUERY ON index.html 
 @app.route('/query', methods=['GET'])
 def query():
+    username = session.get('username')
     sql_query = request.args.get('query')
     try:
         cursor = g.conn.execute(text(sql_query))
         results = cursor.fetchall()
+        context.clear()
         context["results"] = results
         context["column_names"]=cursor.keys()
         context["query_display_text"]="Your Query: "
+        context["logout_status"] = "Logout "+username
         context["query_display_data"]=sql_query
         #context["column_names"] = [desc[0] for desc in cursor.description]
         return render_template('index.html', **context)
@@ -221,8 +389,6 @@ def query():
         query_error_message = f"Error executing query: {str(e)}"
         print(query_error_message)
         return render_template('index.html', query_error_message=query_error_message)
-    finally:
-	    cursor.close()
 
 
 if __name__ == "__main__":

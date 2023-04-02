@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='find.css') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+  <title>CUBR</title>
+
+  <style>
+
+
+  </style>
+
+</head>
+
+<body>
+
+  <nav>
+    <div id="left-menu-items">
+    <a href="/">Home</a>
+    <a href="/leaderboard">Leaderboard</a>
+    <a href="/find">Find</a>
+    <a href="/reviews">Reviews</a>
+    <a href="/random">I'm feeling lucky</a>
+    </div>
+    <a href="/logout" id="logout-menu-item"><div>{{logout_status}}</div></a>
+  </nav>
+
+  <div class="header">
+    <h1>CUBR</h1>
+    <img src="{{ url_for('static', filename='cubrlogo.png') }}" alt="logo">
+  </div>
+
+  <div id="searchTitle"><h2>Search Bathrooms:</h2></div>
+
+  <form method="POST" action="/find_query">
+    <div id="dropdowns">
+      <!-- BUILDING DROPDOWN -->
+      <label for="building">Select a building:</label>
+      <select name="building" id="building" required>
+        <option value="" selected disabled></option>
+        {% for option in building_options %}
+          <option value="{{option[0]}}">{{option[1]}}</option>
+        {% endfor %}
+      </select>
+  
+      <!-- FLOOR DROPDOWN -->
+      <label for="floor">Floor:</label>
+      <select name="floor" id="floor">
+        <option value="" selected disabled></option>
+        {% for option in floor_options %}
+        <option value="{{option}}">{{option}}</option>
+        {% endfor %}
+      </select>
+  
+      <!-- GENDER DROPDOWN -->
+      <label for="gender">Gendered:</label>
+      <select name="gender" id="gender">
+        <option value="" selected disabled></option>
+        <option value="male">male</option>
+        <option value="female">female</option>
+        <option value="coed">coed</option>
+      </select>
+    </div>
+    <input type="submit" value="Execute Search">
+  </form>
+  
+  <script>
+    const buildingDropdown = document.getElementById('building');
+    const floorDropdown = document.getElementById('floor');
+  
+    buildingDropdown.addEventListener('change', () => {
+      const selectedOption = buildingDropdown.value;
+      fetch(`/get_second_dropdown/${selectedOption}`)
+        .then(response => response.json())
+        .then(options => {
+          // Clear current options
+          floorDropdown.innerHTML = '';
+
+          // Add blank option
+          const blankOption = document.createElement('option');
+          blankOption.value = 'NULL';
+          blankOption.innerText = '';
+          blankOption.disabled = true;
+          blankOption.selected = true;
+          floorDropdown.appendChild(blankOption);
+  
+          // Add new options
+          options.forEach(option => {
+            const newOption = document.createElement('option');
+            newOption.value = option;
+            newOption.innerText = option;
+            floorDropdown.appendChild(newOption);
+          });
+        });
+    });
+  </script>
+
+<div id="query_result">{{query_message}}<a href="/add">{{link_message}}</a></div>
+
+  <table>
+      <tr>
+        <th>Building</th>
+        <th>Floor</th>
+        <th>Description</th>
+        <th>Gender</th>
+        <th>Handicap Accessible</th>
+        <th># Toilet</th>
+        <th># Sink</th>
+        <th># Urinal</th>
+        <th>Single Use?</th>
+      </tr>
+    {% for result in results %}
+      <tr>
+      {% for column in result %}
+        <td>{{ column }}</td>
+      {% endfor %}
+      </tr>
+    {% endfor %}
+  </table>
+
+</body>
+</html>

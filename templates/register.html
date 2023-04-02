@@ -57,7 +57,7 @@
     <a href="/">Home</a>
     <a href="/leaderboard">Leaderboard</a>
     <a href="/reviews">Reviews</a>
-    <a href="#">Catalog</a>
+    <a href="/find">Find</a>
     <a href="/random">I'm feeling lucky</a>
     </div>
   </nav>
@@ -67,22 +67,18 @@
     <img src="{{ url_for('static', filename='cubrlogo.png') }}" alt="logo">
   </div>
 
-  
-  
-  <!---
-  <p><a href="another">Go to the other page</a></p> 
-  -->
+
 
   <form method="POST" action="/register_user">
-    <label for="uname">Username: (required)</label>
+    <label for="uname">Username: <span style="color:red">(required)</span></label>
     <input  type="text" id="uname" name="uname" required><br>
 
-    <label for="password">Password: (required)</label>
+    <label for="password">Password: <span style="color:red">(required)</span></label>
     <input type="password" id="password" name="password" required><br>
 
     <label for="gender">Gender:</label>
     <select id="gender" name="gender">
-      <option value="">--Please select--</option>
+      <option value="" selected disabled></option>
       <option value="male">male</option>
       <option value="female">female</option>
       <option value="other">other</option>

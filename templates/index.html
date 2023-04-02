@@ -93,8 +93,8 @@
     <div id="left-menu-items">
     <a href="/">Home</a>
     <a href="/leaderboard">Leaderboard</a>
+    <a href="/find">Find</a>
     <a href="/reviews">Reviews</a>
-    <a href="#">Catalog</a>
     <a href="/random">I'm feeling lucky</a>
     </div>
     <a href="/logout" id="logout-menu-item"><div>{{logout_status}}</div></a>
@@ -105,11 +105,6 @@
     <img src="{{ url_for('static', filename='cubrlogo.png') }}" alt="logo">
   </div>
 
-  
-  
-  <!---
-  <p><a href="another">Go to the other page</a></p> 
-  -->
 
   <form method="GET" action="/query">
     <label for="query">Enter Query:</label>
