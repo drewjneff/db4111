@@ -375,7 +375,7 @@ def find_query():
                END
         FROM bathroom 
         NATURAL JOIN building
-        WHERE building_id = :building 
+        WHERE (building_id = COALESCE(:building, building_id)) 
           AND (floor = COALESCE(:floor, floor)) 
           AND (gender = COALESCE(:gender, gender))
         ORDER BY bname, floor;
@@ -388,7 +388,10 @@ def find_query():
         get_bname_query = "SELECT bname FROM building WHERE building_id = :building"
         cursor = g.conn.execute(text(get_bname_query), {'building': data[0]})
         bname_result = cursor.fetchone()
-        bname = bname_result[0]
+        if bname_result:
+             bname = bname_result[0]
+        else:
+             bname = "Database"
         print(bname_result)
         cursor.close()
         find_context["link_message"] = "Add more."

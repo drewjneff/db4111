@@ -39,7 +39,7 @@
     <div id="dropdowns">
       <!-- BUILDING DROPDOWN -->
       <label for="building">Select a building:</label>
-      <select name="building" id="building" required>
+      <select name="building" id="building">
         <option value="" selected disabled></option>
         {% for option in building_options %}
           <option value="{{option[0]}}">{{option[1]}}</option>
@@ -49,7 +49,7 @@
       <!-- FLOOR DROPDOWN -->
       <label for="floor">Floor:</label>
       <select name="floor" id="floor">
-        <option value="" selected disabled></option>
+        <option value="" selected></option>
         {% for option in floor_options %}
         <option value="{{option}}">{{option}}</option>
         {% endfor %}
@@ -58,7 +58,7 @@
       <!-- GENDER DROPDOWN -->
       <label for="gender">Gendered:</label>
       <select name="gender" id="gender">
-        <option value="" selected disabled></option>
+        <option value="" selected></option>
         <option value="male">male</option>
         <option value="female">female</option>
         <option value="nonbinary">nonbinary</option>
