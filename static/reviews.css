@@ -116,12 +116,27 @@ form {
   margin: 20px 0;
   margin: 0 auto;
   padding: 20px;
-  margin-top: 10px;
+  margin-top: 20px;
   background-color: #fff;
   border-radius: 5px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
   max-width: 750px;
   width: 90%;
+}
+
+#dropdowns {
+  display: block;
+  margin: 0 auto;
+}
+
+label {
+  margin-right: 10px;
+  margin-left: 20px;
+  font-weight: bold;
+}
+
+select {
+  max-width: 130px;
 }
 
 input[type="submit"] {
@@ -141,7 +156,7 @@ input[type="submit"] {
 
 
 
-#submit-button input:hover {
+input:hover {
   background-color: #91c1e5;
 }
 
@@ -151,32 +166,34 @@ input[type="submit"] {
   margin-top: 20px;
 }
 
-
-#row1, #row2, #row3 {
-  display: block;
-  margin: 0 auto;
-  margin-top: 15px;
-}
-
-label {
-  margin-right: 10px;
-  margin-left: 20px;
-  font-weight: bold;
-}
-
-select {
-  max-width: 130px;
-}
-
-#row3 input {
-  max-width: 20px;
-}
-
-#addTitle {
+#searchTitle {
   margin: 0 auto;
   text-align: center;
 }
 
-#clear_error {
-  margin-top : 10px;
+#linkContainer {
+  display: flex;
+  justify-content: center;
+}
+
+#randLink {
+  align-items: center;
+  text-align: center;
+  background-color: #78b3e0;
+  padding: 10px 10px 10px 10px;
+  border-radius: 5px;
+  border: 1px solid #78b3e0;
+  color: white;
+  width: 100px; 
+  margin: 0 auto;
+  transition: background-color 0.25s ease;
+}
+
+#randLink a {
+  color: white;
+}
+
+#randLink:hover {
+  background-color: #91c1e5;
+  text-decoration: none;
 }

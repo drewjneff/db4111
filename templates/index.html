@@ -44,7 +44,6 @@
   }
 
   #query_display_text {
-    font-weight: bold;
     margin-right: 10px;
   }
 
@@ -113,7 +112,7 @@
   </form>
 
   <div id="query_error">{{query_error_message}}</div>
-  <div id="display_query"><div id="query_display_text">{{query_display_text}}</div><div id="query_display_data">{{query_display_data}}</div></div>
+  <div id="display_query"><div id="query_display_text" id="query_display_data"><span style="font-weight:bold">{{query_display_text}}</span>{{query_display_data}}</div></div>
   <div id="success_message">{{success_message}}</div>
 
   <table>

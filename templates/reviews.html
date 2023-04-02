@@ -2,67 +2,12 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='review.css') }}">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='find.css') }}">
   <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
   <title>CUBR</title>
 
   <style>
-  #query_error {
-    display:none;
-    text-align:center;
-  }
-  
-  {% if query_error_message %}
-  #query_error{
-    display:flex;
-    justify-content: center;
-    background-color: #ffcccc;
-    padding: 20px;
-    border-radius: 5px;
-    border: 1px solid #ff0000;
-    max-width: 85%; 
-    margin: 0 auto;
-  }
-{% endif %}
 
-#display_query {
-    display:none;
-    text-align:center;
-  }
-  
-  {% if query_display_text %}
-  #display_query{
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    background-color: #78b3e0;
-    padding: 20px;
-    border-radius: 5px;
-    border: 1px solid #78b3e0;
-    max-width: 85%; 
-    margin: 0 auto;
-  }
-
-  #query_display_text {
-    font-weight: bold;
-    margin-right: 10px;
-  }
-
-  #query_display_data {
-    display: inline-block;
-  }
-{% endif %}
-
-#logout_status {
-    display: none;
-  }
-
-  {% if logout_status %}
-  #login-menu-item {
-    display:block;
-    float: right
-  }
-  {% endif %}
 
   </style>
 
@@ -86,24 +31,47 @@
     <img src="{{ url_for('static', filename='cubrlogo.png') }}" alt="logo">
   </div>
 
+  <div id="linkContainer"><a href="\add_review" id="randLink">Add Review</a></div>
+  <div id="searchTitle"><h2>Search Reviews:</h2></div>
 
-  <form method="GET" action="/query">
-    <label for="query">Enter Query:</label>
-    <textarea id="query" name="query" rows="6"></textarea>
-    <input type="submit" value="Execute">
+  <form method="POST" action="/review_query">
+    <div id="dropdowns">
+      <!-- USER DROPDOWN -->
+      <label for="user">Select a User:</label>
+      <select name="user" id="user">
+        <option value="" selected disabled></option>
+        {% for option in user_options %}
+          <option value="{{option[0]}}">{{option[1]}}</option>
+        {% endfor %}
+      </select>
+  
+      <!-- BUILDING DROPDOWN -->
+      <label for="building">Building:</label>
+      <select name="building" id="building">
+        <option value="" selected disabled></option>
+        {% for option in building_options %}
+        <option value="{{option[0]}}">{{option[1]}}</option>
+        {% endfor %}
+      </select>
+
+    </div>
+    <input type="submit" value="Execute Search">
   </form>
+  
 
-  <div id="query_error">{{query_error_message}}</div>
-  <div id="display_query"><div id="query_display_text">{{query_display_text}}</div><div id="query_display_data">{{query_display_data}}</div></div>
+<div id="query_result">{{query_message}}<a href="/add_review">{{link_message}}</a></div>
 
   <table>
-    {% if column_names %}
       <tr>
-      {% for column_name in column_names %}
-        <th>{{ column_name }}</th>
-      {% endfor %}
+        <th>Username</th>
+        <th>Building</th>
+        <th>Floor</th>
+        <th>Description</th>
+        <th>Gender</th>
+        <th>Review</th>
+        <th>Rating</th>
+        <th>Date</th>
       </tr>
-    {% endif %}
     {% for result in results %}
       <tr>
       {% for column in result %}

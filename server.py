@@ -1,17 +1,9 @@
-"""
-Columbia's COMS W4111.001 Introduction to Databases
-Example Webserver
-To run locally:
-    python server.py
-Go to http://localhost:8111 in your browser.
-A debugger such as "pdb" may be helpful for debugging.
-Read about it online.
-"""
 import os
   # accessible as a variable in index.html:
 from sqlalchemy import *
 from sqlalchemy.pool import NullPool
 from flask import Flask, request, render_template, g, session, jsonify, url_for, redirect, Response
+
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
@@ -36,13 +28,6 @@ engine = create_engine(DATABASEURI)
 
 @app.before_request
 def before_request():
-	"""
-	This function is run at the beginning of every web request 
-	(every time you enter an address in the web browser).
-	We use it to setup a database connection that can be used throughout the request.
-
-	The variable g is globally accessible.
-	"""
 	try:
 		g.conn = engine.connect()
 	except:
@@ -52,10 +37,6 @@ def before_request():
 
 @app.teardown_request
 def teardown_request(exception):
-	"""
-	At the end of the web request, this makes sure to close the database connection.
-	If you don't, the database could run out of memory!
-	"""
 	try:
 		g.conn.close()
 	except Exception as e:
@@ -73,7 +54,7 @@ def login_attempt():
     uname_form = request.form['login_uname']
     uname = uname_form.upper() 
     password = request.form['login_pw']
-    check_login_credentials = '''SELECT uname FROM USERS WHERE (UPPER(uname),password)=(:uname,:password)'''
+    check_login_credentials = '''SELECT user_id, uname FROM USERS WHERE (UPPER(uname),password)=(:uname,:password)'''
     cursor = g.conn.execute(text(check_login_credentials), {'uname': uname, 'password': password})
     row = cursor.fetchone()
     if row is None:
@@ -84,21 +65,25 @@ def login_attempt():
         if row is None:
             login_error_message = "Error: User Not Found"
         else:
-            login_error_message = "Error: Invalid Password"
+            login_error_message = "Error: Invalid Password. Try again or"
         return render_template('login.html',login_error_message=login_error_message)
     else:
-        print("Found matching row:", row)
-        session['username'] = uname_form 
+        session['username'] = row[1]
+        session['user_id'] = row[0]
+        print("User "+str(row[0])+": "+row[1]+" logged in")
         context.clear()
-        context['success_message'] = "Welcome "+row[0]+"!"
-        context['logout_status'] = "Logout "+uname_form
+        context['success_message'] = "Welcome "+str(row[1])+"!"
+        context['logout_status'] = "Logout "+str(row[1])
         return render_template('index.html',**context)
 
 
 @app.route('/logout')
 def logout():
-	session.pop('username', None)
-	return redirect(url_for('index'))
+    username, user_id = session.get('username'),session.get('user_id')
+    print("User "+str(user_id)+": "+username+" logged out")
+    session.pop('user_id', None)
+    session.pop('username', None)
+    return redirect(url_for('index'))
 
 @app.route('/clear_add_error')
 def clear_add_error():
@@ -142,15 +127,134 @@ def another():
 #Review page
 @app.route('/reviews')
 def reviews():
-	username = session.get('username')
-	if username is None:
-		login_error_message = "Please Log In To Continue or"
-		return render_template("login.html",login_error_message=login_error_message)
-	else:
-		context.clear()
-		context["logout_status"] = "Logout "+username
-		return render_template("reviews.html",**context)
-        
+    username = session.get('username')
+    if username is None:
+        login_error_message = "Please Log In To Continue or"
+        return render_template("login.html", login_error_message=login_error_message)
+    else:
+        context.clear()
+        if "results" in find_context:
+            context["results"] = find_context["results"]
+            context["query_message"] = find_context["query_message"]
+            context["link_message"] = find_context["link_message"]
+        get_users_query = "SELECT user_id, uname FROM users ORDER BY uname"
+        cursor = g.conn.execute(text(get_users_query))
+        users = cursor.fetchall()
+        context["user_options"] = users
+        get_buildings_query = "SELECT building_id, bname FROM building ORDER BY bname"
+        cursor = g.conn.execute(text(get_buildings_query))
+        buildings = cursor.fetchall()
+        context["building_options"] = buildings
+        context["logout_status"] = "Logout " + username
+        cursor.close()
+        return render_template("reviews.html", **context)
+    
+
+
+@app.route('/review_query', methods=['POST'])
+def review_query():
+    username = session.get('username')
+    if username is None:
+        login_error_message = "Please Log In To Continue or"
+        return render_template("login.html", login_error_message=login_error_message)
+    else:
+        data = []
+        fields = ['user', 'building']
+        for field in fields:
+            value = request.form.get(field)
+            if value:
+                data.append(value)
+            else:
+                data.append(None)
+        review_query_str = """SELECT u.uname, b.bname, br.floor, '#' || br.br_id || ' ' || COALESCE(CAST(br.br_description AS VARCHAR), ''), 
+                              		br.gender, COALESCE(CAST(r.body AS VARCHAR), '') AS body, r.rating, r.review_date 
+							  FROM review r JOIN bathroom br ON r.br_id = br.br_id 
+								    JOIN building b ON b.building_id = br.building_id 
+									JOIN users u ON r.user_id = u.user_id
+							  WHERE (u.user_id = COALESCE(:user,u.user_id)) AND (b.building_id = COALESCE(:building,b.building_id))
+							  ORDER BY u.user_id, b.building_id
+       					   """
+        cursor = g.conn.execute(text(review_query_str), {'user': data[0], 'building': data[1]})
+        results = cursor.fetchall()
+        context.clear()
+        find_context["results"] = results
+        find_context["logout_status"] = "Logout " + username
+        cursor.close()
+        find_context["link_message"] = "Add Review."
+        if not results:
+              find_context["query_message"] = "No Reviews On Record. "
+              find_context["link_message"] = "Be the first to add."
+        else:
+              find_context["query_message"] = "Displaying "+str(len(results))+" Reviews On Record. "
+        return redirect(url_for('reviews'))
+    
+@app.route('/add_review')
+def add_review():
+    username = session.get('username')
+    if username is None:
+        login_error_message = "Please Log In To Continue or"
+        return render_template("login.html", login_error_message=login_error_message)
+    else:
+        context.clear()
+        if "success_message" in find_context:
+            context["success_message"] = find_context["success_message"]
+        if "query_error_message" in find_context:
+            context["query_error_message"] = find_context["query_error_message"]
+        get_buildings_query = "SELECT building_id, bname FROM building ORDER BY bname"
+        cursor = g.conn.execute(text(get_buildings_query))
+        buildings = cursor.fetchall()
+        context["building_options"] = buildings
+        context["logout_status"] = "Logout " + username
+        cursor.close()
+        return render_template("add_review.html", **context)
+
+#Gets bathroom dropdown option of depending on the building and floor selected
+#followed this tutorial for cascading dropdown https://www.youtube.com/watch?v=jIAPewyzrp0
+@app.route('/get_br_dropdown/<building>/<floor>')
+def get_br_dropdown(building, floor):
+    get_br_query = """
+        SELECT br_id AS id, (floor || ' floor ' || br_description || ' ' || gender) AS label
+        FROM bathroom WHERE (building_id = :building) and (floor = :floor)
+    """
+    cursor = g.conn.execute(text(get_br_query), {'building': building, 'floor': floor})
+    rows = cursor.fetchall()
+    if len(rows) == 0:
+        result = []
+    else:
+        result = [dict(id=row.id, label=row.label) for row in rows]
+    return jsonify(result)
+
+
+@app.route('/add_review_query', methods=['POST'])
+def add_review_query():
+    username = session.get('username')
+    user_id = session.get('user_id')
+    if username is None:
+        login_error_message = "Please Log In To Continue or"
+        return render_template("login.html", login_error_message=login_error_message)
+    else:
+        data = []
+        fields = ['bathroom', 'body', 'rating']
+        for field in fields:
+            value = request.form.get(field)
+            if value:
+                data.append(value)
+            else:
+                data.append(None)
+        data.append(user_id)
+        try:
+            add_review_string = '''INSERT INTO review(br_id, body, rating, user_id) 
+               					  VALUES (:br_id, :body, :rating, :user_id)
+               				   '''
+            g.conn.execute(text(add_review_string), {'br_id': data[0], 'body': data[1], 'rating': data[2], 'user_id': data[3],})
+            g.conn.commit()
+            find_context["success_message"] = "Success! Review posted."
+            return redirect(url_for('add_review'))
+        except Exception as e:
+            find_context["query_error_message"] = f"Error posting review: {str(e)}"
+            return redirect(url_for('add_review'))
+            #return render_template('add.html', query_error_message=query_error_message)
+    
 @app.route('/add')
 def add():
     username = session.get('username')
@@ -201,6 +305,8 @@ def add_br():
             return redirect(url_for('add'))
             #return render_template('add.html', query_error_message=query_error_message)
 
+
+
       
 
 
@@ -227,6 +333,7 @@ def find():
 
 
 #Gets second dropdown option of floors depending on the building selected in the first option 
+#followed this tutorial for cascading dropdown https://www.youtube.com/watch?v=jIAPewyzrp0
 @app.route('/get_second_dropdown/<building>')
 def get_second_dropdown(building):
     get_floors_query = """SELECT floors FROM building WHERE building_id = :building"""
@@ -248,22 +355,13 @@ def find_query():
         return render_template("login.html", login_error_message=login_error_message)
     else:
         data = []
-        if request.form.get('building'):
-            data.append(request.form['building'])
-        else:
-            data.append(None)
-        if request.form.get('floor'):
-           data.append(request.form['floor'])
-        else:
-            data.append(None)
-        if request.form.get('gender'):
-            data.append(request.form['gender'])
-        else:
-            data.append(None)
-
-        for i in range(len(data)):
-            if data[i] == '':
-                data[i] = None
+        fields = ['building', 'floor', 'gender']
+        for field in fields:
+            value = request.form.get(field)
+            if value:
+                data.append(value)
+            else:
+                data.append(None)
         find_query_str = """
         SELECT bname, floor, br_description, gender, 
                COALESCE(CAST(handicap AS VARCHAR), 'N/A'), 
@@ -346,24 +444,23 @@ def register():
 @app.route('/register_user', methods=['POST'])
 def register_user():
     data = []
-    data.append(request.form['uname'])
-    data.append(request.form['password'])
-    data.append(request.form['gender'])
-    data.append(request.form['class_year'])
-    data.append(request.form['favorite_br'])
-    data.append(request.form['home_br'])
-
-    for i in range(len(data)):
-        if data[i] == '':
-            data[i] = None
-
+    fields = ['uname', 'password', 'gender','class_year','favorite_br','home_br']
+    for field in fields:
+        value = request.form.get(field)
+        if value:
+            data.append(value)
+        else:
+            data.append(None)
     try:
         g.conn.execute(text('INSERT INTO users(uname, password, gender, class_year, favorite_br, home_br) VALUES (:uname, :password, :gender, :class_year, :favorite_br, :home_br)'), {'uname': data[0], 'password': data[1], 'gender': data[2], 'class_year': data[3], 'favorite_br': data[4], 'home_br': data[5]})
         g.conn.commit()
         success_message = "Account Created! Welcome "+data[0]+"! Please login to continue."
         return render_template("login.html",success_message=success_message)
     except Exception as e:
-        register_error_message = f"Error executing query: {str(e)}"
+        error_str = str(e)
+        if "duplicate key value violates unique constraint \"idx_users_uname_upper\"" in error_str:
+             error_str = "User with that username already exists"
+        register_error_message = "Error Registering: "+error_str
         print(register_error_message)
         return render_template('register.html', register_error_message=register_error_message)
 
@@ -387,7 +484,7 @@ def query():
         cursor.close()  
     except Exception as e:
         query_error_message = f"Error executing query: {str(e)}"
-        print(query_error_message)
+        #print(query_error_message)
         return render_template('index.html', query_error_message=query_error_message)
 
 
@@ -400,17 +497,6 @@ if __name__ == "__main__":
 	@click.argument('HOST', default='0.0.0.0')
 	@click.argument('PORT', default=8111, type=int)
 	def run(debug, threaded, host, port):
-		"""
-		This function handles command line parameters.
-		Run the server using:
-
-			python server.py
-
-		Show the help text using:
-
-			python server.py --help
-
-		"""
 
 		HOST, PORT = host, port
 		print("running on %s:%d" % (HOST, PORT))

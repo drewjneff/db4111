@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='add.css') }}">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='add_review.css') }}">
   <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
   <title>CUBR</title>
 
@@ -68,9 +68,9 @@
     <img src="{{ url_for('static', filename='cubrlogo.png') }}" alt="logo">
   </div>
 
-  <div id="addTitle"><h2>Add Bathroom:</h2></div>
+  <div id="addTitle"><h2>Add Review:</h2></div>
 
-  <form method="POST" action="/add_br">
+  <form method="POST" action="/add_review_query">
     <div id="row1">
       <!-- BUILDING DROPDOWN -->
       <label for="building">Select a building:</label>
@@ -90,49 +90,29 @@
         {% endfor %}
       </select>
   
-      <!-- GENDER DROPDOWN -->
-      <label for="gender">Gendered:</label>
-      <select name="gender" id="gender" required>
-        <option value="" selected disabled></option>
-        <option value="male">male</option>
-        <option value="female">female</option>
-        <option value="coed">coed</option>
+      <!-- BR DROPDOWN -->
+      <label for="bathroom">Bathroom:</label>
+      <select name="bathroom" id="bathroom" required>
+        {% for option in bathroom_options %}
+        <option value="{{option}}">{{option}}</option>
+        {% endfor %}
       </select>
     </div>
     <div id="row1">
-      <!-- BR DESCRIPTION-->
-      <label for="br_description">Description:</label>
-      <input type="text" id="br_description" name="br_description">
+      <!-- BODY-->
+      <label for="body">Review:</label>
+      <input type="text" id="body" name="body">
 
-      <!-- SINGLE USE DROPDOWN-->
-      <label for="single_use">Single Use:</label>
-      <select name="single_use" id="single_use">
+      <!-- RATING DROPDOWN-->
+      <label for="rating">Rating:</label>
+      <select name="rating" id="rating" required>
         <option value="" selected disabled></option>
-        <option value="true">Yes</option>
-        <option value="false">No</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
       </select>
-
-      <!-- HANDICAP ACCESSIBLE DROPDOWN-->
-      <label for="handicap">Handicap Accessible:</label>
-      <select name="handicap" id="handicap">
-        <option value="" selected disabled></option>
-        <option value="true">Yes</option>
-        <option value="false">No</option>
-      </select>
-    </div>
-    <div id="row3">
-       <!-- NUMBER TOILET-->
-       <label for="num_toilet"># of Toilets:</label>
-       <input type="text" id="num_toilet" name="num_toilet">
-
-        <!-- NUMBER SINK-->
-      <label for="num_sink"># of Sinks:</label>
-      <input type="text" id="num_sink" name="num_sink">
-
-       <!-- NUMBER URINAL-->
-       <label for="num_urinal"># of Urinals:</label>
-       <input type="text" id="num_urinal" name="num_urinal">
-    
     </div>
     <input id="submit-button" type="submit" value="Add">
   </form>
@@ -147,10 +127,11 @@
   <script>
     const buildingDropdown = document.getElementById('building');
     const floorDropdown = document.getElementById('floor');
+    const bathroomDropdown = document.getElementById('bathroom');
   
     buildingDropdown.addEventListener('change', () => {
-      const selectedOption = buildingDropdown.value;
-      fetch(`/get_second_dropdown/${selectedOption}`)
+      const selectedBuilding = buildingDropdown.value;
+      fetch(`/get_second_dropdown/${selectedBuilding}`)
         .then(response => response.json())
         .then(options => {
           // Clear current options
@@ -171,6 +152,34 @@
             newOption.innerText = option;
             floorDropdown.appendChild(newOption);
           });
+        });
+    });
+
+    floorDropdown.addEventListener('change', () => {
+      const selectedBuilding = buildingDropdown.value;
+      const selectedFloor = floorDropdown.value; 
+      fetch(`/get_br_dropdown/${selectedBuilding}/${selectedFloor}`)
+        .then(response => response.json())
+        .then(options => {
+          // Clear current options
+          bathroomDropdown.innerHTML = '';
+
+          // Add blank option
+          const blankOption = document.createElement('option');
+          blankOption.value = 'NULL';
+          blankOption.innerText = '';
+          blankOption.disabled = true;
+          blankOption.selected = true;
+          bathroomDropdown.appendChild(blankOption);
+  
+          // Add new options
+          options.forEach(option => {
+            const newOption = document.createElement('option');
+            newOption.value = option.id;
+            newOption.innerText = option.label;
+            bathroomDropdown.appendChild(newOption);
+          });
+
         });
     });
   </script>
