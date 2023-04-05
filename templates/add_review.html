@@ -101,7 +101,7 @@
     <div id="row1">
       <!-- BODY-->
       <label for="body">Review:</label>
-      <input type="text" id="body" name="body">
+      <input type="text" id="body" name="body" style="width: 315px">
 
       <!-- RATING DROPDOWN-->
       <label for="rating">Rating:</label>
@@ -114,7 +114,8 @@
         <option value="5">5</option>
       </select>
     </div>
-    <input id="submit-button" type="submit" value="Add">
+    <input id="submit-button" type="submit" value="Post Review">
+    <h3 style="margin-top: 40px">Don't See What You're Looking For? <a href="\add">Add it first!</a></h3>
   </form>
 
   <div id="query_error">
@@ -131,7 +132,7 @@
   
     buildingDropdown.addEventListener('change', () => {
       const selectedBuilding = buildingDropdown.value;
-      fetch(`/get_second_dropdown/${selectedBuilding}`)
+      fetch(`/get_floor_dropdown/${selectedBuilding}`)
         .then(response => response.json())
         .then(options => {
           // Clear current options

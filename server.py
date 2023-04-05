@@ -200,7 +200,7 @@ def add_review():
             context["success_message"] = find_context["success_message"]
         if "query_error_message" in find_context:
             context["query_error_message"] = find_context["query_error_message"]
-        get_buildings_query = "SELECT building_id, bname FROM building ORDER BY bname"
+        get_buildings_query = "SELECT DISTINCT building.building_id, bname FROM building JOIN bathroom ON building.building_id = bathroom.building_id ORDER BY bname"
         cursor = g.conn.execute(text(get_buildings_query))
         buildings = cursor.fetchall()
         context["building_options"] = buildings
@@ -223,6 +223,29 @@ def get_br_dropdown(building, floor):
     else:
         result = [dict(id=row.id, label=row.label) for row in rows]
     return jsonify(result)
+
+@app.route('/get_floor_dropdown/<building>')
+def get_floor_dropdown(building):
+    get_floors_query = """SELECT DISTINCT br.floor,
+               CAST(CASE WHEN br.floor ~ '\d+' 
+                         THEN regexp_replace(CAST(br.floor AS TEXT), '\D', '', 'g')::INTEGER
+                         ELSE NULL
+                    END AS INTEGER) AS floor_order
+        FROM building b
+        JOIN bathroom br ON b.building_id = br.building_id
+        WHERE b.building_id = :building
+        ORDER BY floor_order NULLS FIRST, br.floor;
+
+
+                       """
+    cursor = g.conn.execute(text(get_floors_query), {'building': building})
+    rows = cursor.fetchall()
+    if len(rows) == 0 or rows[0][0] is None:
+        return jsonify([])  # Return empty list if no rows are found or if the first row's floor value is null
+    floors = [row[0] for row in rows]  # Extract the floor values from the result rows
+    floors = [floor.strip() for floor in floors if floor is not None]  # Remove whitespace and None values
+    return jsonify(floors)
+
 
 
 @app.route('/add_review_query', methods=['POST'])
