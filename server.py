@@ -172,7 +172,7 @@ def review_query():
 								    JOIN building b ON b.building_id = br.building_id 
 									JOIN users u ON r.user_id = u.user_id
 							  WHERE (u.user_id = COALESCE(:user,u.user_id)) AND (b.building_id = COALESCE(:building,b.building_id))
-							  ORDER BY u.user_id, b.building_id
+							  ORDER BY r.review_date DESC, u.user_id, b.building_id
        					   """
         cursor = g.conn.execute(text(review_query_str), {'user': data[0], 'building': data[1]})
         results = cursor.fetchall()
