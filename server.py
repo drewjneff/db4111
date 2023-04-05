@@ -213,7 +213,7 @@ def add_review():
 @app.route('/get_br_dropdown/<building>/<floor>')
 def get_br_dropdown(building, floor):
     get_br_query = """
-        SELECT br_id AS id, (floor || ' floor ' || br_description || ' ' || gender) AS label
+        SELECT br_id AS id, (floor || ' floor ' || COALESCE(CAST(br_description AS VARCHAR), '') || ' ' || gender) AS label
         FROM bathroom WHERE (building_id = :building) and (floor = :floor)
     """
     cursor = g.conn.execute(text(get_br_query), {'building': building, 'floor': floor})
