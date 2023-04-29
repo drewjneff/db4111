@@ -1,4 +1,6 @@
 Project Title: Columbia University Bathroom Database 
+Authors: Drew Neff & Ashton Reimer
+Date Last Modified: April 29th, 2023
 
 Project Description: 
 
