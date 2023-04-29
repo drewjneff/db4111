@@ -13,6 +13,8 @@ app.secret_key = 'your_secret_key_here'
 context = dict()
 find_context = dict()
 
+app.debug = 'production'
+
 
 # XXX: The URI should be in the format of:
 #     postgresql://USER:PASSWORD@34.73.36.248/project1
@@ -24,6 +26,17 @@ DATABASEURI = f"postgresql://djn2119:8055@34.148.107.47/project1"
 
 # This line creates a database engine that knows how to connect to the URI above.
 engine = create_engine(DATABASEURI)
+
+
+print("")
+print("\033[32m_______________________________________")
+print("|                                     |")
+print("\033[32m|            SERVER OPENED            |")
+print("|            SUCCESSFULLY             |")
+print("|                                     |")
+print("|           localhost:8111            |")
+print("|_____________________________________|\033[37m")
+print("")
 
 
 @app.before_request
@@ -515,17 +528,25 @@ def query():
 
 
 if __name__ == "__main__":
-	import click
+    import click
+    @click.command()
+    @click.option('--debug', is_flag=False)
+    @click.option('--threaded', is_flag=True)
+    @click.argument('HOST', default='0.0.0.0')
+    @click.argument('PORT', default=8111, type=int)
+    def run(debug, threaded, host, port):
+        HOST, PORT = host, port
+        app.run(host=HOST, port=PORT, debug=False, threaded=threaded)
+        print("")
+        print("\033[32m_______________________________________")
+        print("|                                     |")
+        print("\033[32m|            SERVER CLOSED            |")
+        print("|             SUCCESSFULLY            |")
+        print("|_____________________________________|\033[37m")
+        print("")
+    run()
+   
 
-	@click.command()
-	@click.option('--debug', is_flag=True)
-	@click.option('--threaded', is_flag=True)
-	@click.argument('HOST', default='0.0.0.0')
-	@click.argument('PORT', default=8111, type=int)
-	def run(debug, threaded, host, port):
 
-		HOST, PORT = host, port
-		print("running on %s:%d" % (HOST, PORT))
-		app.run(host=HOST, port=PORT, debug=debug, threaded=threaded)
+run(debug=False)
 
-run()
