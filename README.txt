@@ -23,4 +23,4 @@ To run this program you must have Python 3.0 installed on your machine.
 4. Close server connection with Ctrl-C once finished
 
 
-NOTE: There is no guarantee of the persistence of the POSTGRESQL database beyond August 01 2023, however SQL table and trigger construction schema is provided in src/SQL_src 
+NOTE: There is no guarantee of the persistence of the POSTGRESQL database beyond May 25th 2023, however SQL table and trigger construction schema is provided in src/SQL_src 
